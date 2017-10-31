@@ -11,8 +11,8 @@
 <body>
     <div id="floating-panel">
         <b>Start: </b>
-        <select id="start">
-            <option value="13.051828, 80.251548">Consulate Main</option>
+        <select id="selectStart">
+            <!-- <option value="13.051828, 80.251548">Consulate Main</option>
             <option value="13.045188, 80.255144">Kumara Guru</option>
             <option value="13.031430655221271, 80.24697705546839">River House</option>
             <option value="13.026005158148841, 80.24584116441804">TBR 2</option>
@@ -23,11 +23,11 @@
             <option value="13.031741000000018, 80.24701060000007">FLAME</option>
             <option value="13.021915400000012, 80.25604429999999">Lincoln Lower</option>
             <option value="13.046289, 80.256254">Nandos</option>
-            <option value="13.044619, 80.255564">Darios</option>
+            <option value="13.044619, 80.255564">Darios</option> -->
         </select>
         <b>End: </b>
-        <select id="end">
-            <option value="13.051828, 80.251548">Consulate Main</option>
+        <select id="selectEnd">
+            <!-- <option value="13.051828, 80.251548">Consulate Main</option>
             <option value="13.045188, 80.255144">Kumara Guru</option>
             <option value="13.031430655221271, 80.24697705546839">River House</option>
             <option value="13.026005158148841, 80.24584116441804">TBR 2</option>
@@ -38,17 +38,13 @@
             <option value="13.031741000000018, 80.24701060000007">FLAME</option>
             <option value="13.021915400000012, 80.25604429999999">Lincoln Lower</option>
             <option value="13.046289, 80.256254">Nandos</option>
-            <option value="13.044619, 80.255564">Darios</option>
+            <option value="13.044619, 80.255564">Darios</option> -->
         </select>
+        <button type ="button" id="buttonDirection">Direction</button>
     </div>
     <!-- <h3>My Google Maps Demo</h3> -->
     <div id="map"></div>
     <script>
-        var markers_Chennai_CG = {
-            position: { lat: 13.051828, lng: 80.251548 },
-            type: 'Office',
-            description: 'Consulate Main',
-        };
 
         var markers_Chennai = [
           {
@@ -114,16 +110,34 @@
           },
         ];
 
-        var markertImageBase = 'http://maps.google.com/mapfiles/kml/pal3/';
+        var markers_Chennai_CG = markers_Chennai[0];
+
+        var selectStart = document.getElementById("selectStart");
+        var selectEnd = document.getElementById("selectEnd");
+        var optionValue;
+        // for(i in markers_Chennai) {
+        //     optionValue = markers_Chennai[i].lat + "," + markers_Chennai[i].lng;
+        //     selectStart.options[selectStart.options.length] = new Option(markers_Chennai[i].description, optionValue);
+        //     selectEnd.options[selectEnd.options.length] = new Option(markers_Chennai[i].description, optionValue);
+        // }
+
+        markers_Chennai.forEach(function(markers_Chennai){
+            optionValue = markers_Chennai.position.lat + "," + markers_Chennai.position.lng;
+            selectStart.options[selectStart.options.length] = new Option(markers_Chennai.description, optionValue);
+            selectEnd.options[selectEnd.options.length] = new Option(markers_Chennai.description, optionValue);
+        });
+
+        var markerImageBase1 = 'http://maps.google.com/mapfiles/kml/pal3/';
+        var markerImageBase2 = 'http://maps.google.com/mapfiles/kml/pal2/';
         var markerImage = {
             Residence: {
-                icon: markertImageBase + 'icon56.png'
+                icon: markerImageBase1 + 'icon56.png'
             },
             Office: {
-                icon: markertImageBase + 'icon21.png'
+                icon: markerImageBase1 + 'icon21.png'
             },
             Restaurent: {
-                icon: markertImageBase + 'icon55.png'
+                icon: markerImageBase2 + 'icon32.png'
             }
         };
 
@@ -176,13 +190,16 @@
                 calculateAndDisplayRoute(directionsService, directionsDisplay);
             };
 
-            document.getElementById('start').addEventListener('change', onChangeHandler);
-            document.getElementById('end').addEventListener('change', onChangeHandler);
+            // document.getElementById('selectStart').addEventListener('change', onChangeHandler);
+            // document.getElementById('selectEnd').addEventListener('change', onChangeHandler);
+            document.getElementById('buttonDirection').addEventListener('click', function(){
+                window.open('https://www.google.com/maps/dir/?api=1&origin=' + selectStart.value + '&destination=' + selectEnd.value + '&travelmode=driving');
+            });
         }
 
         function setMarkers(gotCurrentPosition) {
           markers_Chennai.forEach(function (markers_Chennai) {
-              marker = new google.maps.Marker({
+            marker = new google.maps.Marker({
                   position: markers_Chennai.position,
                   // label: markers_Chennai.description,
                   icon: markerImage[markers_Chennai.type].icon,
@@ -203,7 +220,7 @@
               marker.addListener('mouseout', function () {
                   // infoWindow.close();
               });
-          });
+            });
         }
 
         function locateCurrentPosition() {
@@ -229,8 +246,8 @@
 
         function calculateAndDisplayRoute(directionsService, directionsDisplay) {
             directionsService.route({
-                origin: document.getElementById('start').value,
-                destination: document.getElementById('end').value,
+                origin: document.getElementById('selectStart').value,
+                destination: document.getElementById('selectEnd').value,
                 travelMode: 'DRIVING'
             }, function (response, status) {
                 if (status === 'OK') {
