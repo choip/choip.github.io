@@ -127,8 +127,8 @@
             selectEnd.options[selectEnd.options.length] = new Option(markers_Chennai.description, optionValue);
         });
 
-        var markerImageBase1 = 'http://maps.google.com/mapfiles/kml/pal3/';
-        var markerImageBase2 = 'http://maps.google.com/mapfiles/kml/pal2/';
+        var markerImageBase1 = 'https://maps.google.com/mapfiles/kml/pal3/';
+        var markerImageBase2 = 'https://maps.google.com/mapfiles/kml/pal2/';
         var markerImage = {
             Residence: {
                 icon: markerImageBase1 + 'icon56.png'
@@ -190,8 +190,17 @@
                 calculateAndDisplayRoute(directionsService, directionsDisplay);
             };
 
+            var selectStartChangeHandler = function () {
+                foundItem = markers_Chennai.find(foundItem=>foundItem.description == selectStart.textContent)
+                infoWindow.setPosition(foundItem.position);
+                infoWindow.setContent(infoWindowContent);
+                infoWindow.open(map);
+            };
+
             // document.getElementById('selectStart').addEventListener('change', onChangeHandler);
             // document.getElementById('selectEnd').addEventListener('change', onChangeHandler);
+            document.getElementById('selectStart').addEventListener('change', selectStartChangeHandler);
+            document.getElementById('selectEnd').addEventListener('change', selectEndChangeHandler);
             document.getElementById('buttonDirection').addEventListener('click', function(){
                 window.open('https://www.google.com/maps/dir/?api=1&origin=' + selectStart.value + '&destination=' + selectEnd.value + '&travelmode=driving');
             });
@@ -202,7 +211,7 @@
             marker = new google.maps.Marker({
                   position: markers_Chennai.position,
                   // label: markers_Chennai.description,
-                  //icon: markerImage[markers_Chennai.type].icon,
+                  icon: markerImage[markers_Chennai.type].icon,
                   map: map
               });
           
@@ -210,7 +219,7 @@
               if (gotCurrentPosition) {
                 infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + currentPosition.lat + ',' + currentPosition.lng + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + '&travelmode=driving" target="_blank">Direction from Current Location</a>';
               }else{
-                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + String(markers_Chennai_CG.position.lat) + ',' + String(markers_Chennai_CG.position.lng) + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + '&travelmode=driving" target="_blank">Direction from Current Location</a>';
+                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + markers_Chennai_CG.position.lat + ',' + markers_Chennai_CG.position.lng + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + '&travelmode=driving" target="_blank">Direction from Current Location</a>';
               }
               marker.addListener('mouseover', function () {
                   infoWindow.setPosition(markers_Chennai.position);
