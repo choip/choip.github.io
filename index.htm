@@ -111,6 +111,7 @@
         ];
 
         var markers_Chennai_CG = markers_Chennai[0];
+        var srcPosition, dstPosition;
 
         var selectStart = document.getElementById("selectStart");
         var selectEnd = document.getElementById("selectEnd");
@@ -141,7 +142,7 @@
             }
         };
 
-        var map, infoWindow, marker, currentPosition;
+        var map, infoWindow, currentPosition;
 
         function initMap() {
 
@@ -181,7 +182,6 @@
                 });
             } else {
                 setMarkers(false);
-                
                 // Browser doesn't support Geolocation
                 handleLocationError(false, infoWindow, map.getCenter());
             }
@@ -191,8 +191,19 @@
             };
 
             var selectStartChangeHandler = function () {
-                foundItem = markers_Chennai.find(foundItem=>foundItem.description == selectStart.textContent)
+                var foundItem = markers_Chennai.find(foundItem => foundItem.description == selectStart.options[selectStart.selectedIndex].text);
+                map.setCenter(foundItem.position);
                 infoWindow.setPosition(foundItem.position);
+                var infoWindowContent = foundItem.description + '<p></p>Start Position';
+                infoWindow.setContent(infoWindowContent);
+                infoWindow.open(map);
+            };
+
+            var selectEndChangeHandler = function () {
+                var foundItem = markers_Chennai.find(foundItem => foundItem.description == selectEnd.options[selectEnd.selectedIndex].text);
+                map.setCenter(foundItem.position);
+                infoWindow.setPosition(foundItem.position);
+                var infoWindowContent = foundItem.description + '<p></p>Start Position';
                 infoWindow.setContent(infoWindowContent);
                 infoWindow.open(map);
             };
@@ -206,33 +217,76 @@
             });
         }
 
+        function directionCurrentLocation(){
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    var directionUrl = 'https://www.google.com/maps/dir/?api=1&origin=' + pos.lat + ',' + pos.lng + '&destination=' + dstPosition.lat + ',' + dstPosition.lng + '&travelmode=driving';
+                    window.open(directionUrl);
+                }, function () {
+                    handleLocationError(true, infoWindow, map.getCenter());
+                });
+            } else {
+                // Browser doesn't support Geolocation
+                handleLocationError(false, infoWindow, map.getCenter());
+            }
+        }
+
         function setMarkers(gotCurrentPosition) {
-          markers_Chennai.forEach(function (markers_Chennai) {
-            marker = new google.maps.Marker({
-                  position: markers_Chennai.position,
-                  // label: markers_Chennai.description,
-                  icon: markerImage[markers_Chennai.type].icon,
-                  map: map
-              });
-          
-              var infoWindowContent;
-              if (gotCurrentPosition) {
-                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + currentPosition.lat + ',' + currentPosition.lng + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + '&travelmode=driving" target="_blank">Direction from Current Location</a>';
-              }else{
-                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + markers_Chennai_CG.position.lat + ',' + markers_Chennai_CG.position.lng + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + '&travelmode=driving" target="_blank">Direction from Current Location</a>';
-              }
-              marker.addListener('mouseover', function () {
-                  infoWindow.setPosition(markers_Chennai.position);
-                  infoWindow.setContent(infoWindowContent);
-                  infoWindow.open(map);
-              });
-              marker.addListener('mouseout', function () {
-                  // infoWindow.close();
-              });
+            markers_Chennai.forEach(function (markers_Chennai) {
+                var marker = new google.maps.Marker({
+                        position: markers_Chennai.position,
+                        // label: markers_Chennai.description,
+                        icon: markerImage[markers_Chennai.type].icon,
+                        map: map
+                });
+                var infoWindowContent;
+                if (gotCurrentPosition) {
+                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + currentPosition.lat + ',' + currentPosition.lng + 
+                                    '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + 
+                                    '&travelmode=driving" target="_blank">Direction from Current Location</a>' + 
+                                    '<p></p><a href="#" onclick = "directionCurrentLocation()">Click Here For Test</a>';
+                }else{
+                infoWindowContent = markers_Chennai.description + '<p></p><a href="https://www.google.com/maps/dir/?api=1&origin=' + markers_Chennai_CG.position.lat + ',' + 
+                                    markers_Chennai_CG.position.lng + '&destination=' + markers_Chennai.position.lat + ',' + markers_Chennai.position.lng + 
+                                    '&travelmode=driving" target="_blank">Direction from Current Location</a>';
+                }
+                marker.addListener('mouseover', function () {
+                    infoWindow.setPosition(markers_Chennai.position);
+                    infoWindow.setContent(infoWindowContent);
+                    infoWindow.open(map);
+                    dstPosition = markers_Chennai.position;
+                });
+                marker.addListener('mouseout', function () {
+                    // infoWindow.close();
+                });
             });
         }
 
         function locateCurrentPosition() {
+            // Try HTML5 geolocation.
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    infoWindow.setPosition(pos);
+                    infoWindow.setContent('Location found.');
+                    infoWindow.open(map);
+                    map.setCenter(pos);
+                }, function () {
+                    handleLocationError(true, infoWindow, map.getCenter());
+                });
+            } else {
+                // Browser doesn't support Geolocation
+                handleLocationError(false, infoWindow, map.getCenter());
+            }
+        }
+        function locateCurrentPositionInfoWindow() {
             // Try HTML5 geolocation.
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
