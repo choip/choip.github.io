@@ -17,19 +17,20 @@
 </head>
 <body>
     <div id="floating-panel">
-        <b>Start: </b><select id="selectStart" style="width: 150px" onfocus="this.selectedIndex=-1"></select>
+        <b>Start: </b><select id="selectStart" style="width: 150px" onfocus="selectedIndex=-1"></select>
         <b>Destination: </b><select id="selectEnd" style="width: 150px" onfocus="selectedIndex=-1"></select>
-        <button id="buttonDirection" type="button">Direction</button> <b>Category: </b>
-        <select id="selectCategory" onfocus="selectedIndex=-1"></select>
+        <button id="buttonDirection" type="button">Direction</button>
+        <b>Category1: </b><select id="selectCategory" onfocus="selectedIndex=-1"></select>
+        <b>Category2: </b><select id="selectCategory2" onfocus="selectedIndex=-1"></select>
     </div>
     <div id="map" style="width:100%;height:95%;"></div>
 
     <script>
         var markersPub = [
             {
-            position: {lat: 13.051828, lng: 80.251548},
-            category: 'Office',
-            description: 'Consulate Main',
+                position: {lat: 13.051828, lng: 80.251548},
+                category: 'Office',
+                description: 'Consulate Main',
             }, {
                 position: { lat: 13.045188, lng: 80.255144 },
                 // position: new google.maps.LatLng(13.045188, 80.255144),
@@ -78,35 +79,29 @@
             },
         ];
 
-        var categoryPub = ['All','Residence', 'Restaurant'];
-
+        var categoryPub = ['All', 'Office', 'Residence', 'Restaurant'];
+        var category2Pub = ['All', 'Office', 'Residence', 'Restaurant'];
+        
         var selectStart = document.getElementById("selectStart");
         var selectEnd = document.getElementById("selectEnd");
         var buttonDirection = document.getElementById('buttonDirection');
         var selectCategory = document.getElementById("selectCategory");
+        var selectCategory2 = document.getElementById("selectCategory2");
         
-        setSelectOptions();
-        function setSelectOptions(selectedCategory) {
-            selectStart.innerHTML = null;
-            selectEnd.innerHTML = null;
-            markersPub.forEach(function(markersPub){
-                var optionValue = markersPub.position.lat + "," + markersPub.position.lng;
-                if (selectedCategory == null||selectedCategory == 'All'){
-                    selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
-                    selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
-                }else{
-                    if (markersPub.category == selectedCategory){
-                        selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
-                        selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
-                    }
-                }
-            });
-            selectCategory.innerHTML = null;
-            categoryPub.forEach(function(categoryPub) {
-                var optionValue = categoryPub;
-                selectCategory.options[selectCategory.options.length] = new Option(categoryPub, optionValue);
-            });
-        }
+        markersPub.forEach(function(markersPub){
+            var optionValue = markersPub.position.lat + "," + markersPub.position.lng;
+            selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
+            selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
+        });
+
+        categoryPub.forEach(function(categoryPub) {
+            var optionValue = categoryPub;
+            selectCategory.options[selectCategory.options.length] = new Option(categoryPub, optionValue);
+        });
+        category2Pub.forEach(function(category2Pub) {
+            var optionValue = category2Pub;
+            selectCategory2.options[selectCategory2.options.length] = new Option(category2Pub, optionValue);
+        });
 
         var markerImageBase1 = 'https://maps.google.com/mapfiles/kml/pal3/';
         var markerImageBase2 = 'https://maps.google.com/mapfiles/kml/pal2/';
@@ -126,9 +121,6 @@
         var currentPosition;
         var centerPosition = {lat:13.04, lng:80.251548};
         var consulatePosition = markersPub[0].position;
-
-        var fitBoundsPositions = {start:null, end:null};
-        var bounds;
 
         function initMap() {
 
@@ -151,23 +143,19 @@
             // Try HTML5 geolocation.
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
-                  currentPosition = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                  };
-                  infoWindowCurrent.setPosition(currentPosition);
-                  infoWindowCurrent.setContent('Location found.');
-                  infoWindowCurrent.open(map);
-                  //map.setCenter(currentPosition);
-                  var bounds = new google.maps.LatLngBounds();
-                  bounds.extend(currentPosition);
-                  bounds.extend(consulatePosition);
-                  map.fitBounds(bounds);
-                  initMarkers(true);
-
+                    currentPosition = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    infoWindowCurrent.setPosition(currentPosition);
+                    infoWindowCurrent.setContent('Current Location');
+                    infoWindowCurrent.open(map);
+                    //map.setCenter(currentPosition);
+                    fitBoundsAll();
+                    initMarkers(true);
                 }, function () {
-                  initMarkers(false);
-                  handleLocationError(true, infoWindowMarkers, map.getCenter());
+                    initMarkers(false);
+                    handleLocationError(true, infoWindowMarkers, map.getCenter());
                 });
             } else {
                 initMarkers(false);
@@ -214,8 +202,30 @@
             });
         }
 
-        function setMarkers(selectedCategory){
-            if (selectedCategory == "All") {
+        function setSelectOptions(selectedCategory, selectedCategory2) {
+            selectStart.innerHTML = null;
+            selectEnd.innerHTML = null;
+            var bounds = new google.maps.LatLngBounds();
+            markersPub.forEach(function(markersPub){
+                var optionValue = markersPub.position.lat + "," + markersPub.position.lng;
+                if (selectedCategory == 'All' || selectedCategory2 == 'All') {
+                    selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
+                    selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
+                    bounds.extend(markersPub.position);
+                }else{
+                    if (markersPub.category == selectedCategory || markersPub.category == selectedCategory2) {
+                        selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
+                        selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
+                        bounds.extend(markersPub.position);
+                    }
+                }
+            });
+            if (currentPosition) bounds.extend(currentPosition);
+            map.fitBounds(bounds);            
+        }
+
+        function setMarkers(selectedCategory, selectedCategory2){
+            if (selectedCategory == 'All'||selectedCategory2 == 'All') {
                 markers.forEach(function (markers) {
                     markers.setMap(map);
                 });
@@ -225,7 +235,7 @@
                     markers.setMap(null);
                 });
                 for (var i = 0; i < markersPub.length; i++) {
-                    if (markersPub[i].category == selectedCategory){
+                    if (markersPub[i].category == selectedCategory || markersPub[i].category == selectedCategory2){
                         markers[i].setMap(map);
                     }
                 }
@@ -259,21 +269,23 @@
                         '&destination=' + selectEnd.value + '&travelmode=driving');
         });
         selectCategory.addEventListener('change', selectCategoryChangeHandler);
-
+        selectCategory2.addEventListener('change', selectCategoryChangeHandler);
+        
         var selectedCategory;
+        var selectedCategory2;
 
+        var fitBoundsPositions = {start:null, end:null};
+        
         function selectStartChangeHandler() {
             var foundItem = markersPub.find(foundItem => foundItem.description == selectStart.options[selectStart.selectedIndex].text);
             // map.setCenter(centerPosition);
             // map.setZoom(14);
             fitBoundsPositions.start = foundItem.position;
-            fitBoundsRefresh();
+            fitBoundsStartEnd();
             infoWindowStart.setPosition(foundItem.position);
             var infoWindowContent = '<b>' + foundItem.description + '</b><br>Start';
             infoWindowStart.setContent(infoWindowContent);
             infoWindowStart.open(map);
-            selectedCategory = selectCategory.options[selectCategory.selectedIndex].text
-            setMarkers(selectedCategory);
         };
 
         function selectEndChangeHandler() {
@@ -281,19 +293,18 @@
             // map.setCenter(centerPosition);
             // map.setZoom(14);
             fitBoundsPositions.end = foundItem.position;
-            fitBoundsRefresh();
+            fitBoundsStartEnd();
             infoWindowEnd.setPosition(foundItem.position);
             var infoWindowContent = '<b>' + foundItem.description + '</b><br>Destination';
             infoWindowEnd.setContent(infoWindowContent);
             infoWindowEnd.open(map);
-            selectedCategory = selectCategory.options[selectCategory.selectedIndex].text
-            setMarkers(selectedCategory);
         };
 
         function selectCategoryChangeHandler() {
             selectedCategory = selectCategory.options[selectCategory.selectedIndex].text
-            setSelectOptions(selectedCategory);
-            setMarkers(selectedCategory);
+            selectedCategory2 = selectCategory2.options[selectCategory2.selectedIndex].text
+            setSelectOptions(selectedCategory, selectedCategory2);
+            setMarkers(selectedCategory, selectedCategory2);
             infoWindowStart.close();
             infoWindowEnd.close();
         };
@@ -306,12 +317,20 @@
             infoWindow.open(map);
         }
 
-        function fitBoundsRefresh(){
+        function fitBoundsStartEnd(){
             var bounds = new google.maps.LatLngBounds();
             if (currentPosition) bounds.extend(currentPosition);
             if (fitBoundsPositions.start) bounds.extend(fitBoundsPositions.start);
             if (fitBoundsPositions.end) bounds.extend(fitBoundsPositions.end);
             map.fitBounds(bounds);
+        }
+        function fitBoundsAll(){
+            var bounds = new google.maps.LatLngBounds();
+            markersPub.forEach(function(markersPub){
+                bounds.extend(markersPub.position);
+            });
+            bounds.extend(currentPosition);
+            map.fitBounds(bounds);            
         }
 
     </script>
