@@ -20,8 +20,8 @@
         <b>Start: </b><select id="selectStart" style="width: 150px" onfocus="selectedIndex=-1"></select>
         <b>Destination: </b><select id="selectEnd" style="width: 150px" onfocus="selectedIndex=-1"></select>
         <button id="buttonDirection" type="button">Direction</button>
-        <b>Category1: </b><select id="selectCategory" onfocus="selectedIndex=-1"></select>
-        <b>Category2: </b><select id="selectCategory2" onfocus="selectedIndex=-1"></select>
+        <b>Category1: </b><select id="selectCategory" onfocus="this.selectedIndex=-1"></select>
+        <b>Category2: </b><select id="selectCategory2" onfocus="this.selectedIndex=-1"></select>
     </div>
     <div id="map" style="width:100%;height:95%;"></div>
 
@@ -140,7 +140,6 @@
                 pixelOffset: new google.maps.Size(0,-32)
             });
             
-            // Try HTML5 geolocation.
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
                     currentPosition = {
@@ -254,11 +253,11 @@
                         '&destination=' + dstPosition.lat + ',' + dstPosition.lng + '&travelmode=driving';
                     window.open(directionUrl);
                 }, function () {
-                    handleLocationError(true, infoWindow, map.getCenter());
+                    handleLocationError(true, infoWindowCurrent, map.getCenter());
                 });
             } else {
                 // Browser doesn't support Geolocation
-                handleLocationError(false, infoWindow, map.getCenter());
+                handleLocationError(false, infoWindowCurrent, map.getCenter());
             }
         }
 
@@ -309,12 +308,12 @@
             infoWindowEnd.close();
         };
 
-        function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-            infoWindow.setPosition(pos);
-            infoWindow.setContent(browserHasGeolocation ?
+        function handleLocationError(browserHasGeolocation, infoWindowCurrent, pos) {
+            infoWindowCurrent.setPosition(pos);
+            infoWindowCurrent.setContent(browserHasGeolocation ?
               'Error: The Geolocation service failed.' :
               'Error: Your browser doesn\'t support geolocation.');
-            infoWindow.open(map);
+            infoWindowCurrent.open(map);
         }
 
         function fitBoundsStartEnd(){
