@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/> -->
+
+    <script type='text/javascript', src="jQuery/jquery-3.2.1.js"></script>
+    <script type='text/javascript', src="jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href="jquery-ui-1.12.1/jquery-ui.css" rel="stylesheet" type="text/css"/>
+    
     <style>
         /* #map {
             height: 94vh;
@@ -14,19 +22,41 @@
             padding: 0px
         }
     </style>
+
 </head>
 <body>
     <div id="floating-panel">
-        <b>Start: </b><select id="selectStart" style="width: 150px" onfocus="selectedIndex=-1"></select>
-        <b>Destination: </b><select id="selectEnd" style="width: 150px" onfocus="selectedIndex=-1"></select>
+        <b>Origin: </b>
+        <input id="startAC">
+        <b>Destination: </b>
+        <input id="endAC">
+        <!-- <b>Start: </b>
+        <select id="selectStart" style="width: 150px" onfocus="selectedIndex=-1;this.blur();"> -->
+            <!-- <option id="Cons" class="markers-select-option-start" value="1">Consulate</option>
+            <option id="Kumara" class="markers-select-option-start" value="2">Kumara</option>
+            <option id="River" class="markers-select-option-start" value="3">River</option>
+            <option class="markers-select-option-start" value="4">TBR 2</option>
+            <option class="markers-select-option-start" value="5">TBR 3</option>
+            <option class="markers-select-option-start" value="6">TBR 4</option>
+            <option class="markers-select-option-start" value="7">Atrium</option>
+            <option class="markers-select-option-start" value="8">Kannan APT</option>
+            <option class="markers-select-option-start" value="9">Flame</option>
+            <option class="markers-select-option-start" value="10">Lincoln Lower</option>
+            <option class="markers-select-option-start" value="11">Nandos</option>
+            <option class="markers-select-option-start" value="12">Darios</option> -->
+        <!-- </select>
+        <b>Destination: </b>
+        <select id="selectEnd" style="width: 150px" onfocus="selectedIndex=-1;this.blur()"></select> -->
         <button id="buttonDirection" type="button">Direction</button>
-        <b>Category1: </b><select id="selectCategory" onfocus="this.selectedIndex=-1"></select>
-        <b>Category2: </b><select id="selectCategory2" onfocus="this.selectedIndex=-1"></select>
+        <!-- <b>Category1: </b><select id="selectCategory" onfocus="this.selectedIndex=-1;this.blur();"></select>
+        <b>Category2: </b><select id="selectCategory2" onfocus="selectedIndex=-1;this.blur();"></select> -->
+        <b>Category1: </b><select id="selectCategory"></select>
+        <b>Category2: </b><select id="selectCategory2"></select>
     </div>
-    <div id="map" style="width:100%;height:95%;"></div>
+    <div id="map" style="width:100%;height:97vh;"></div>
 
     <script>
-        var markersPub = [
+        var markersData = [
             {
                 position: {lat: 13.051828, lng: 80.251548},
                 category: 'Office',
@@ -79,30 +109,146 @@
             },
         ];
 
-        var categoryPub = ['All', 'Office', 'Residence', 'Restaurant'];
-        var category2Pub = ['All', 'Office', 'Residence', 'Restaurant'];
+        markersAC=[];
+        markersData.forEach(function(markersData){
+            markersAC.push(markersData.description);
+        });
+
+        $('#startAC').autocomplete({
+            source: markersAC,
+            minLength: 0,
+        });
+        $('#endAC').autocomplete({
+            source: markersAC,
+            minLength: 0,
+        });
+
+        $('#startAC').mouseover(function(){
+            $('#startAC').val('');
+            // $('#startAC').focus();
+            $('#startAC').autocomplete("search")
+        });
+        $('#endAC').mouseover(function(){
+            $('#endAC').val('');
+            // $('#endAC').focus();
+            $('#endAC').autocomplete("search")
+        });
+        setInterval(function(){
+            var startHovered = $('#startAC:hover').length > 0
+            var endHovered = $('#endAC:hover').length > 0
+            var hovered = $('ul.ui-autocomplete:hover').length > 0
+            if(!hovered && !endHovered && !startHovered) {
+                $('#startAC').autocomplete( "close" );
+                $('#endAC').autocomplete( "close" );
+                if (!$('#startAC').val()){
+                    infoWindowStart.close(map);
+                }
+                if (!$('#endAC').val()){
+                    infoWindowEnd.close(map);
+                }
+            }
+        }, 100);
+
+        $('#startAC').on("autocompletefocus", function(e, ui){
+            startACFocusHandler(ui.item.label);
+        });
+        $('#endAC').on("autocompletefocus", function(e, ui){
+            endACFocusHandler(ui.item.label);
+        });
+        $('#startAC').on("autocompleteselect", function(e, ui){
+            fitBoundsStartEnd();
+        });
+        $('#endAC').on("autocompleteselect", function(e, ui){
+            fitBoundsStartEnd();
+        });
         
-        var selectStart = document.getElementById("selectStart");
-        var selectEnd = document.getElementById("selectEnd");
+        function startACFocusHandler(startSelected) {
+            var foundItem = markersData.find(foundItem => foundItem.description == startSelected);
+            startCategory = foundItem.category;
+            fitBoundsPositions.start = foundItem.position;
+            infoWindowStart.setPosition(foundItem.position);
+            var infoWindowContent = '<b>' + foundItem.description + '</b><br>Start';
+            infoWindowStart.setContent(infoWindowContent);
+            infoWindowStart.open(map);
+        };
+        
+        function endACFocusHandler(endSelected) {
+            var foundItem = markersData.find(foundItem => foundItem.description == endSelected);
+            endCategory = foundItem.category;
+            fitBoundsPositions.end = foundItem.position;
+            infoWindowEnd.setPosition(foundItem.position);
+            var infoWindowContent = '<b>' + foundItem.description + '</b><br>Destination';
+            infoWindowEnd.setContent(infoWindowContent);
+            infoWindowEnd.open(map);
+        };
+
+        function setSelectOptions(selectedCategory, selectedCategory2) {
+            var bounds = new google.maps.LatLngBounds();
+            markersAC=[];
+            markersData.forEach(function(markersData){
+                var optionValue = markersData.position.lat + "," + markersData.position.lng;
+                if (selectedCategory == 'All' || selectedCategory2 == 'All') {
+                        markersAC.push(markersData.description);
+                        bounds.extend(markersData.position);
+                }else{
+                    if (markersData.category == selectedCategory || markersData.category == selectedCategory2) {
+                            markersAC.push(markersData.description);
+                            bounds.extend(markersData.position);
+                    }
+                }
+            });
+            $('#startAC').autocomplete({
+                source: markersAC,
+                minLength: 0,
+            });
+            $('#endAC').autocomplete({
+                source: markersAC,
+                minLength: 0,
+            });
+            var startInput = $('#startAC').val();
+            var foundItem = markersData.find(foundItem => foundItem.description == startInput);
+            if (foundItem.category != selectedCategory) $('#startAC').val('');
+            var endInput = $('#endAC').val();
+            var foundItem = markersData.find(foundItem => foundItem.description == endInput);
+            if (foundItem.category != selectedCategory) $('#endAC').val('');
+            if (currentPosition) bounds.extend(currentPosition);
+            if(selectedCategory != 'None' || selectedCategory2 != 'None') map.fitBounds(bounds);           
+        }
+
+        var categoryPub = ['All', 'None', 'Office', 'Residence', 'Restaurant'];
+        var category2Pub = ['All', 'None', 'Office', 'Residence', 'Restaurant'];
+        
+        // var selectStart = document.getElementById("selectStart");
+        // var selectEnd = document.getElementById("selectEnd");
         var buttonDirection = document.getElementById('buttonDirection');
         var selectCategory = document.getElementById("selectCategory");
         var selectCategory2 = document.getElementById("selectCategory2");
         
-        markersPub.forEach(function(markersPub){
-            var optionValue = markersPub.position.lat + "," + markersPub.position.lng;
-            selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
-            selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
-        });
+        // initSelectMarkers();
+        initSelectCategory();
 
-        categoryPub.forEach(function(categoryPub) {
-            var optionValue = categoryPub;
-            selectCategory.options[selectCategory.options.length] = new Option(categoryPub, optionValue);
-        });
-        category2Pub.forEach(function(category2Pub) {
-            var optionValue = category2Pub;
-            selectCategory2.options[selectCategory2.options.length] = new Option(category2Pub, optionValue);
-        });
-
+        // function initSelectMarkers(){
+        //     selectStart.innerHTML = null;
+        //     selectEnd.innerHTML = null;
+        //     markersData.forEach(function(markersData){
+        //         var optionValue = markersData.position.lat + "," + markersData.position.lng;
+        //         var optionStart = new Option(markersData.description, optionValue);
+        //         var optionEnd = new Option(markersData.description, optionValue);
+        //         selectStart.options[selectStart.options.length] = optionStart;
+        //         selectEnd.options[selectEnd.options.length] = optionEnd;
+        //     });
+        // }
+        function initSelectCategory() {
+            selectCategory.innerHTML = null;
+            selectCategory2.innerHTML = null;
+            categoryPub.forEach(function(categoryPub) {
+                var optionValue = categoryPub;
+                selectCategory.options[selectCategory.options.length] = new Option(categoryPub, optionValue);
+                selectCategory2.options[selectCategory2.options.length] = new Option(categoryPub, optionValue);
+            });
+            selectCategory2.selectedIndex = 1;
+        }
+        
         var markerImageBase1 = 'https://maps.google.com/mapfiles/kml/pal3/';
         var markerImageBase2 = 'https://maps.google.com/mapfiles/kml/pal2/';
         var markerImage = {
@@ -120,7 +266,7 @@
         var map, infoWindowCurrent, infoWindowMarkers, infoWindowStart, infoWindowEnd;
         var currentPosition;
         var centerPosition = {lat:13.04, lng:80.251548};
-        var consulatePosition = markersPub[0].position;
+        var consulatePosition = markersData[0].position;
 
         function initMap() {
 
@@ -150,14 +296,16 @@
                     infoWindowCurrent.setContent('Current Location');
                     infoWindowCurrent.open(map);
                     //map.setCenter(currentPosition);
-                    fitBoundsAll();
                     initMarkers(true);
+                    fitBoundsAll();
                 }, function () {
-                    initMarkers(false);
+                    initMarkers(true);
+                    fitBoundsAll();
                     handleLocationError(true, infoWindowMarkers, map.getCenter());
                 });
             } else {
-                initMarkers(false);
+                initMarkers(true);
+                fitBoundsAll();
                 // Browser doesn't support Geolocation
                 handleLocationError(false, infoWindowMarkers, map.getCenter());
             }
@@ -165,17 +313,18 @@
 
         var dstPosition;
         var markers = [];
+
         function initMarkers(gotCurrentPosition) {
-            markersPub.forEach(function (markersPub) {
+            markersData.forEach(function (markersData) {
                 var marker = new google.maps.Marker({
-                    // position: markersPub.position,
-                    position: new google.maps.LatLng(markersPub.position.lat, markersPub.position.lng),
-                    icon: markerImage[markersPub.category].icon,
-                    title: markersPub.description,
+                    // position: markersData.position,
+                    position: new google.maps.LatLng(markersData.position.lat, markersData.position.lng),
+                    icon: markerImage[markersData.category].icon,
+                    title: markersData.description,
                     map: map
                 });
                 marker.addListener('mouseover', function () {
-                    dstPosition = markersPub.position;
+                    dstPosition = markersData.position;
                     var infoWindowContent;
                     if (gotCurrentPosition) {
                         infoWindowContent = 
@@ -201,27 +350,35 @@
             });
         }
 
-        function setSelectOptions(selectedCategory, selectedCategory2) {
-            selectStart.innerHTML = null;
-            selectEnd.innerHTML = null;
-            var bounds = new google.maps.LatLngBounds();
-            markersPub.forEach(function(markersPub){
-                var optionValue = markersPub.position.lat + "," + markersPub.position.lng;
-                if (selectedCategory == 'All' || selectedCategory2 == 'All') {
-                    selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
-                    selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
-                    bounds.extend(markersPub.position);
-                }else{
-                    if (markersPub.category == selectedCategory || markersPub.category == selectedCategory2) {
-                        selectStart.options[selectStart.options.length] = new Option(markersPub.description, optionValue);
-                        selectEnd.options[selectEnd.options.length] = new Option(markersPub.description, optionValue);
-                        bounds.extend(markersPub.position);
-                    }
-                }
-            });
-            if (currentPosition) bounds.extend(currentPosition);
-            map.fitBounds(bounds);            
-        }
+        // function setSelectOptions(selectedCategory, selectedCategory2) {
+        //     selectStart.innerHTML = null;
+        //     selectEnd.innerHTML = null;
+        //     var bounds = new google.maps.LatLngBounds();
+        //     markersData.forEach(function(markersData){
+        //         var optionValue = markersData.position.lat + "," + markersData.position.lng;
+        //         if (selectedCategory == 'All' || selectedCategory2 == 'All') {
+        //             var optionStart = new Option(markersData.description, optionValue);
+        //             var optionEnd = new Option(markersData.description, optionValue);
+        //             optionStart.className = 'markers-select-option-start';
+        //             optionEnd.className = 'markers-select-option-end';
+        //             // selectStart.options[selectStart.options.length] = optionStart;
+        //             selectEnd.options[selectEnd.options.length] = optionEnd;
+        //             bounds.extend(markersData.position);
+        //         }else{
+        //             if (markersData.category == selectedCategory || markersData.category == selectedCategory2) {
+        //                 var optionStart = new Option(markersData.description, optionValue);
+        //                 var optionEnd = new Option(markersData.description, optionValue);
+        //                 optionStart.className = 'markers-select-option-start';
+        //                 optionEnd.className = 'markers-select-option-end';
+        //                 selectStart.options[selectStart.options.length] = optionStart;
+        //                 selectEnd.options[selectEnd.options.length] = optionEnd;
+        //                 bounds.extend(markersData.position);
+        //             }
+        //         }
+        //     });
+        //     if (currentPosition) bounds.extend(currentPosition);
+        //     if(selectedCategory != 'None' || selectedCategory2 != 'None') map.fitBounds(bounds);           
+        // }
 
         function setMarkers(selectedCategory, selectedCategory2){
             if (selectedCategory == 'All'||selectedCategory2 == 'All') {
@@ -233,8 +390,8 @@
                 markers.forEach(function (markers) {
                     markers.setMap(null);
                 });
-                for (var i = 0; i < markersPub.length; i++) {
-                    if (markersPub[i].category == selectedCategory || markersPub[i].category == selectedCategory2){
+                for (var i = 0; i < markersData.length; i++) {
+                    if (markersData[i].category == selectedCategory || markersData[i].category == selectedCategory2){
                         markers[i].setMap(map);
                     }
                 }
@@ -261,8 +418,22 @@
             }
         }
 
-        selectStart.addEventListener('change', selectStartChangeHandler);
-        selectEnd.addEventListener('change', selectEndChangeHandler);
+        // selectStart.addEventListener('change', selectStartChangeHandler);
+        // selectEnd.addEventListener('change', selectEndChangeHandler);
+        $(document).ready(function(){
+            console.log("doc ready test");
+            $("#selectStart").mouseover(function(){
+                var n = $('#selectStart option').length;
+                $(this).attr('size', n);
+            });
+            $("#selectStart").mouseout(function(){
+                $(this).attr('size', 1);
+            });
+            $("#selectStart").on('mouseover', 'option', function(e){
+                var $target = $(e.target);
+                console.log($target.text());
+            });
+        });
         buttonDirection.addEventListener('click', function(){
             window.open('https://www.google.com/maps/dir/?api=1&origin=' + selectStart.value + 
                         '&destination=' + selectEnd.value + '&travelmode=driving');
@@ -270,17 +441,14 @@
         selectCategory.addEventListener('change', selectCategoryChangeHandler);
         selectCategory2.addEventListener('change', selectCategoryChangeHandler);
         
-        var selectedCategory;
-        var selectedCategory2;
-
+        var selectedCategory, selectedCategory2, startCategory, endCategory;
         var fitBoundsPositions = {start:null, end:null};
-        
+
         function selectStartChangeHandler() {
-            var foundItem = markersPub.find(foundItem => foundItem.description == selectStart.options[selectStart.selectedIndex].text);
-            // map.setCenter(centerPosition);
-            // map.setZoom(14);
+            var foundItem = markersData.find(foundItem => foundItem.description == selectStart.options[selectStart.selectedIndex].text);
+            startCategory = foundItem.category;
             fitBoundsPositions.start = foundItem.position;
-            fitBoundsStartEnd();
+            // fitBoundsStartEnd();
             infoWindowStart.setPosition(foundItem.position);
             var infoWindowContent = '<b>' + foundItem.description + '</b><br>Start';
             infoWindowStart.setContent(infoWindowContent);
@@ -288,9 +456,8 @@
         };
 
         function selectEndChangeHandler() {
-            var foundItem = markersPub.find(foundItem => foundItem.description == selectEnd.options[selectEnd.selectedIndex].text);
-            // map.setCenter(centerPosition);
-            // map.setZoom(14);
+            var foundItem = markersData.find(foundItem => foundItem.description == selectEnd.options[selectEnd.selectedIndex].text);
+            endCategory = foundItem.category;
             fitBoundsPositions.end = foundItem.position;
             fitBoundsStartEnd();
             infoWindowEnd.setPosition(foundItem.position);
@@ -304,8 +471,10 @@
             selectedCategory2 = selectCategory2.options[selectCategory2.selectedIndex].text
             setSelectOptions(selectedCategory, selectedCategory2);
             setMarkers(selectedCategory, selectedCategory2);
-            infoWindowStart.close();
-            infoWindowEnd.close();
+            if (startCategory != selectedCategory && startCategory != selectedCategory2 && selectCategory != 'All' && selectCategory2 != 'All')
+                infoWindowStart.close();
+            if (endCategory != selectedCategory && endCategory != selectedCategory2 && selectCategory != 'All' && selectCategory2 != 'All')
+                infoWindowEnd.close();
         };
 
         function handleLocationError(browserHasGeolocation, infoWindowCurrent, pos) {
@@ -313,7 +482,7 @@
             infoWindowCurrent.setContent(browserHasGeolocation ?
               'Error: The Geolocation service failed.' :
               'Error: Your browser doesn\'t support geolocation.');
-            infoWindowCurrent.open(map);
+            // infoWindowCurrent.open(map);
         }
 
         function fitBoundsStartEnd(){
@@ -322,13 +491,15 @@
             if (fitBoundsPositions.start) bounds.extend(fitBoundsPositions.start);
             if (fitBoundsPositions.end) bounds.extend(fitBoundsPositions.end);
             map.fitBounds(bounds);
+            var currentZoomLevel = map.getZoom();
+            map.setZoom(currentZoomLevel-1);
         }
         function fitBoundsAll(){
             var bounds = new google.maps.LatLngBounds();
-            markersPub.forEach(function(markersPub){
-                bounds.extend(markersPub.position);
+            markersData.forEach(function(markersData){
+                bounds.extend(markersData.position);
             });
-            bounds.extend(currentPosition);
+            // bounds.extend(currentPosition);
             map.fitBounds(bounds);            
         }
 
