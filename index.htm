@@ -30,26 +30,7 @@
         <input id="startAC">
         <b>Destination: </b>
         <input id="endAC">
-        <!-- <b>Start: </b>
-        <select id="selectStart" style="width: 150px" onfocus="selectedIndex=-1;this.blur();"> -->
-            <!-- <option id="Cons" class="markers-select-option-start" value="1">Consulate</option>
-            <option id="Kumara" class="markers-select-option-start" value="2">Kumara</option>
-            <option id="River" class="markers-select-option-start" value="3">River</option>
-            <option class="markers-select-option-start" value="4">TBR 2</option>
-            <option class="markers-select-option-start" value="5">TBR 3</option>
-            <option class="markers-select-option-start" value="6">TBR 4</option>
-            <option class="markers-select-option-start" value="7">Atrium</option>
-            <option class="markers-select-option-start" value="8">Kannan APT</option>
-            <option class="markers-select-option-start" value="9">Flame</option>
-            <option class="markers-select-option-start" value="10">Lincoln Lower</option>
-            <option class="markers-select-option-start" value="11">Nandos</option>
-            <option class="markers-select-option-start" value="12">Darios</option> -->
-        <!-- </select>
-        <b>Destination: </b>
-        <select id="selectEnd" style="width: 150px" onfocus="selectedIndex=-1;this.blur()"></select> -->
         <button id="buttonDirection" type="button">Direction</button>
-        <!-- <b>Category1: </b><select id="selectCategory" onfocus="this.selectedIndex=-1;this.blur();"></select>
-        <b>Category2: </b><select id="selectCategory2" onfocus="selectedIndex=-1;this.blur();"></select> -->
         <b>Category1: </b><select id="selectCategory"></select>
         <b>Category2: </b><select id="selectCategory2"></select>
     </div>
@@ -109,6 +90,8 @@
             },
         ];
 
+        var categoryData = ['All', 'None', 'Office', 'Residence', 'Restaurant'];
+
         markersAC=[];
         markersData.forEach(function(markersData){
             markersAC.push(markersData.description);
@@ -123,6 +106,24 @@
             minLength: 0,
         });
 
+        
+        // var buttonDirection = document.getElementById('buttonDirection');
+        var selectCategory = document.getElementById("selectCategory");
+        var selectCategory2 = document.getElementById("selectCategory2");
+
+        initSelectCategory();
+        
+        function initSelectCategory() {
+            selectCategory.innerHTML = null;
+            selectCategory2.innerHTML = null;
+            categoryData.forEach(function(categoryData) {
+                var optionValue = categoryData;
+                selectCategory.options[selectCategory.options.length] = new Option(categoryData, optionValue);
+                selectCategory2.options[selectCategory2.options.length] = new Option(categoryData, optionValue);
+            });
+            selectCategory2.selectedIndex = 1;
+        }
+
         $('#startAC').mouseover(function(){
             $('#startAC').val('');
             // $('#startAC').focus();
@@ -133,6 +134,7 @@
             // $('#endAC').focus();
             $('#endAC').autocomplete("search")
         });
+
         setInterval(function(){
             var startHovered = $('#startAC:hover').length > 0
             var endHovered = $('#endAC:hover').length > 0
@@ -155,6 +157,7 @@
         $('#endAC').on("autocompletefocus", function(e, ui){
             endACFocusHandler(ui.item.label);
         });
+
         $('#startAC').on("autocompleteselect", function(e, ui){
             fitBoundsStartEnd();
         });
@@ -207,46 +210,24 @@
             });
             var startInput = $('#startAC').val();
             var foundItem = markersData.find(foundItem => foundItem.description == startInput);
-            if (foundItem.category != selectedCategory) $('#startAC').val('');
+            if (foundItem){
+                if (foundItem.category != selectedCategory && foundItem.category != selectedCategory2){
+                    if (selectedCategory != 'All' && selectedCategory2 != 'All'){
+                        $('#startAC').val('');
+                    }
+                }
+            }
             var endInput = $('#endAC').val();
             var foundItem = markersData.find(foundItem => foundItem.description == endInput);
-            if (foundItem.category != selectedCategory) $('#endAC').val('');
+            if (foundItem){
+                if (foundItem.category != selectedCategory && foundItem.category != selectedCategory2){
+                    if (selectedCategory != 'All' && selectedCategory2 != 'All'){
+                        $('#endAC').val('');
+                    }
+                }
+            }
             if (currentPosition) bounds.extend(currentPosition);
             if(selectedCategory != 'None' || selectedCategory2 != 'None') map.fitBounds(bounds);           
-        }
-
-        var categoryPub = ['All', 'None', 'Office', 'Residence', 'Restaurant'];
-        var category2Pub = ['All', 'None', 'Office', 'Residence', 'Restaurant'];
-        
-        // var selectStart = document.getElementById("selectStart");
-        // var selectEnd = document.getElementById("selectEnd");
-        var buttonDirection = document.getElementById('buttonDirection');
-        var selectCategory = document.getElementById("selectCategory");
-        var selectCategory2 = document.getElementById("selectCategory2");
-        
-        // initSelectMarkers();
-        initSelectCategory();
-
-        // function initSelectMarkers(){
-        //     selectStart.innerHTML = null;
-        //     selectEnd.innerHTML = null;
-        //     markersData.forEach(function(markersData){
-        //         var optionValue = markersData.position.lat + "," + markersData.position.lng;
-        //         var optionStart = new Option(markersData.description, optionValue);
-        //         var optionEnd = new Option(markersData.description, optionValue);
-        //         selectStart.options[selectStart.options.length] = optionStart;
-        //         selectEnd.options[selectEnd.options.length] = optionEnd;
-        //     });
-        // }
-        function initSelectCategory() {
-            selectCategory.innerHTML = null;
-            selectCategory2.innerHTML = null;
-            categoryPub.forEach(function(categoryPub) {
-                var optionValue = categoryPub;
-                selectCategory.options[selectCategory.options.length] = new Option(categoryPub, optionValue);
-                selectCategory2.options[selectCategory2.options.length] = new Option(categoryPub, optionValue);
-            });
-            selectCategory2.selectedIndex = 1;
         }
         
         var markerImageBase1 = 'https://maps.google.com/mapfiles/kml/pal3/';
@@ -350,36 +331,6 @@
             });
         }
 
-        // function setSelectOptions(selectedCategory, selectedCategory2) {
-        //     selectStart.innerHTML = null;
-        //     selectEnd.innerHTML = null;
-        //     var bounds = new google.maps.LatLngBounds();
-        //     markersData.forEach(function(markersData){
-        //         var optionValue = markersData.position.lat + "," + markersData.position.lng;
-        //         if (selectedCategory == 'All' || selectedCategory2 == 'All') {
-        //             var optionStart = new Option(markersData.description, optionValue);
-        //             var optionEnd = new Option(markersData.description, optionValue);
-        //             optionStart.className = 'markers-select-option-start';
-        //             optionEnd.className = 'markers-select-option-end';
-        //             // selectStart.options[selectStart.options.length] = optionStart;
-        //             selectEnd.options[selectEnd.options.length] = optionEnd;
-        //             bounds.extend(markersData.position);
-        //         }else{
-        //             if (markersData.category == selectedCategory || markersData.category == selectedCategory2) {
-        //                 var optionStart = new Option(markersData.description, optionValue);
-        //                 var optionEnd = new Option(markersData.description, optionValue);
-        //                 optionStart.className = 'markers-select-option-start';
-        //                 optionEnd.className = 'markers-select-option-end';
-        //                 selectStart.options[selectStart.options.length] = optionStart;
-        //                 selectEnd.options[selectEnd.options.length] = optionEnd;
-        //                 bounds.extend(markersData.position);
-        //             }
-        //         }
-        //     });
-        //     if (currentPosition) bounds.extend(currentPosition);
-        //     if(selectedCategory != 'None' || selectedCategory2 != 'None') map.fitBounds(bounds);           
-        // }
-
         function setMarkers(selectedCategory, selectedCategory2){
             if (selectedCategory == 'All'||selectedCategory2 == 'All') {
                 markers.forEach(function (markers) {
@@ -417,63 +368,35 @@
                 handleLocationError(false, infoWindowCurrent, map.getCenter());
             }
         }
+        
+        $('#buttonDirection').click(function(){
+            if ($('#startAC').val() && $('#endAC').val()){
+                var foundItem = markersData.find(foundItem => foundItem.description == $('#startAC').val());
+                var startPosition = foundItem.position;
+                var foundItem = markersData.find(foundItem => foundItem.description == $('#endAC').val());
+                var endPosition = foundItem.position;
+                window.open('https://www.google.com/maps/dir/?api=1&origin=' + startPosition.lat + ',' + startPosition.lng +
+                 '&destination=' + endPosition.lat + ',' + endPosition.lng + '&travelmode=driving');
+            }
+            else{
+                alert('Origin and Destination both need to be selected');
+            }
+        });
 
-        // selectStart.addEventListener('change', selectStartChangeHandler);
-        // selectEnd.addEventListener('change', selectEndChangeHandler);
-        $(document).ready(function(){
-            console.log("doc ready test");
-            $("#selectStart").mouseover(function(){
-                var n = $('#selectStart option').length;
-                $(this).attr('size', n);
-            });
-            $("#selectStart").mouseout(function(){
-                $(this).attr('size', 1);
-            });
-            $("#selectStart").on('mouseover', 'option', function(e){
-                var $target = $(e.target);
-                console.log($target.text());
-            });
-        });
-        buttonDirection.addEventListener('click', function(){
-            window.open('https://www.google.com/maps/dir/?api=1&origin=' + selectStart.value + 
-                        '&destination=' + selectEnd.value + '&travelmode=driving');
-        });
         selectCategory.addEventListener('change', selectCategoryChangeHandler);
         selectCategory2.addEventListener('change', selectCategoryChangeHandler);
         
         var selectedCategory, selectedCategory2, startCategory, endCategory;
         var fitBoundsPositions = {start:null, end:null};
 
-        function selectStartChangeHandler() {
-            var foundItem = markersData.find(foundItem => foundItem.description == selectStart.options[selectStart.selectedIndex].text);
-            startCategory = foundItem.category;
-            fitBoundsPositions.start = foundItem.position;
-            // fitBoundsStartEnd();
-            infoWindowStart.setPosition(foundItem.position);
-            var infoWindowContent = '<b>' + foundItem.description + '</b><br>Start';
-            infoWindowStart.setContent(infoWindowContent);
-            infoWindowStart.open(map);
-        };
-
-        function selectEndChangeHandler() {
-            var foundItem = markersData.find(foundItem => foundItem.description == selectEnd.options[selectEnd.selectedIndex].text);
-            endCategory = foundItem.category;
-            fitBoundsPositions.end = foundItem.position;
-            fitBoundsStartEnd();
-            infoWindowEnd.setPosition(foundItem.position);
-            var infoWindowContent = '<b>' + foundItem.description + '</b><br>Destination';
-            infoWindowEnd.setContent(infoWindowContent);
-            infoWindowEnd.open(map);
-        };
-
         function selectCategoryChangeHandler() {
             selectedCategory = selectCategory.options[selectCategory.selectedIndex].text
             selectedCategory2 = selectCategory2.options[selectCategory2.selectedIndex].text
             setSelectOptions(selectedCategory, selectedCategory2);
             setMarkers(selectedCategory, selectedCategory2);
-            if (startCategory != selectedCategory && startCategory != selectedCategory2 && selectCategory != 'All' && selectCategory2 != 'All')
+            if (startCategory != selectedCategory && startCategory != selectedCategory2 && selectedCategory != 'All' && selectedCategory2 != 'All')
                 infoWindowStart.close();
-            if (endCategory != selectedCategory && endCategory != selectedCategory2 && selectCategory != 'All' && selectCategory2 != 'All')
+            if (endCategory != selectedCategory && endCategory != selectedCategory2 && selectedCategory != 'All' && selectedCategory2 != 'All')
                 infoWindowEnd.close();
         };
 
